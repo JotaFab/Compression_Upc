@@ -7,18 +7,18 @@ import (
 
 // Nodo del árbol de Huffman
 type HuffmanNode struct {
-	Char      rune
-	Freq      int
-	Left      *HuffmanNode
-	Right     *HuffmanNode
+	Char  rune
+	Freq  int
+	Left  *HuffmanNode
+	Right *HuffmanNode
 }
 
 // Cola de prioridad
 type PriorityQueue []*HuffmanNode
 
-func (pq PriorityQueue) Len() int { return len(pq) }
+func (pq PriorityQueue) Len() int           { return len(pq) }
 func (pq PriorityQueue) Less(i, j int) bool { return pq[i].Freq < pq[j].Freq }
-func (pq PriorityQueue) Swap(i, j int) { pq[i], pq[j] = pq[j], pq[i] }
+func (pq PriorityQueue) Swap(i, j int)      { pq[i], pq[j] = pq[j], pq[i] }
 
 func (pq *PriorityQueue) Push(x interface{}) {
 	*pq = append(*pq, x.(*HuffmanNode))
@@ -44,9 +44,9 @@ func BuildTree(freqMap map[rune]int) *HuffmanNode {
 		left := heap.Pop(&pq).(*HuffmanNode)
 		right := heap.Pop(&pq).(*HuffmanNode)
 		newNode := &HuffmanNode{
-			Char: 0,
-			Freq: left.Freq + right.Freq,
-			Left: left,
+			Char:  0,
+			Freq:  left.Freq + right.Freq,
+			Left:  left,
 			Right: right,
 		}
 		heap.Push(&pq, newNode)
