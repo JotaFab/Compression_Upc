@@ -23,9 +23,12 @@ luego ejecutar el programa
 
 \\ TODO 
 
-interfaz grafica  o talvez un servidor web???? 
+[!] interfaz grafica  o talvez un servidor web???? 
 por ahora solo funciona desde la terminal
 
+[!] Implementar medicion de compresion (tests)  basados en tiempo q demora la compresion tambien la reduccion de peso de los archivos 
+
+[!] Agregar mas metodos de compresion?? 
 \\
 
 
