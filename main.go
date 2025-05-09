@@ -8,13 +8,11 @@ import (
 
 func main() {
 
-	handler := routes.SetupRoutes()
-	fmt.Println("Servidor iniciado en http://localhost:8080")
-
 	s := http.Server{
 		Addr:    ":8080",
-		Handler: handler,
+		Handler: routes.MuxRoutes(),
 	}
 
+	fmt.Println("Servidor iniciando en http://localhost:8080")
 	s.ListenAndServe()
 }
