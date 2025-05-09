@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Compresor de Archivos</title>
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    <style>
+        body { max-width: 800px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif; }
+        .container { background: #f5f5f5; padding: 20px; border-radius: 8px; }
+        .form-group { margin-bottom: 20px; }
+        .results { 
+            background: #fff; 
+            padding: 15px; 
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .download-info { 
+            color: #2196F3;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Compresor de Archivos</h2>
+        
+        <div class="form-group">
+            <form action="/upload" method="post" enctype="multipart/form-data">
+                <h3>Selecciona un archivo:</h3>
+                <input type="file" name="file" required>
+                <div style="margin-top: 10px;">
+                    <button type="submit" name="action" value="compress">Comprimir</button>
+                    <button type="submit" name="action" value="decompress">Descomprimir</button>
+                </div>
+            </form>
+        </div>
+
+        {{if .}}
+        <div class="results" hx-get="/download/{{.Filename}}" hx-trigger="load delay:3s">
+            <h3>Resultados del proceso:</h3>
+            <p>Tamaño original: {{.OriginalSize}} bytes</p>
+            <p>Tamaño final: {{.CompressedSize}} bytes</p>
+            <p>Ratio: {{.Ratio}}%</p>
+            <p class="download-info">⬇️ La descarga comenzará automáticamente en 3 segundos...</p>
+        </div>
+        {{end}}
+    </div>
+</body>
+</html>

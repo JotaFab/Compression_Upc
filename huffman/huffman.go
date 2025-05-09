@@ -34,6 +34,21 @@ func (pq *PriorityQueue) Pop() interface{} {
 
 // Construye el árbol de Huffman desde un mapa de frecuencias
 func BuildTree(freqMap map[rune]int) *HuffmanNode {
+	// Manejar caso vacío
+	if len(freqMap) == 0 {
+		return nil
+	}
+
+	// Manejar caso de un solo carácter
+	if len(freqMap) == 1 {
+		for char, freq := range freqMap {
+			return &HuffmanNode{
+				Char: char,
+				Freq: freq,
+			}
+		}
+	}
+
 	pq := make(PriorityQueue, 0)
 	for char, freq := range freqMap {
 		pq = append(pq, &HuffmanNode{Char: char, Freq: freq})
@@ -69,10 +84,21 @@ func BuildCodes(node *HuffmanNode, prefix string, codeMap map[rune]string) {
 
 // Codifica el texto
 func Encode(text string) (string, map[rune]string) {
-	// Paso 1: calcular frecuencias
+	// Manejar caso vacío
+	if text == "" {
+		return "", make(map[rune]string)
+	}
+
+	// Calcular frecuencias
 	freqMap := make(map[rune]int)
 	for _, ch := range text {
 		freqMap[ch]++
+	}
+
+	// Manejar caso de un solo carácter
+	if len(freqMap) == 1 {
+		char := rune(text[0])
+		return strings.Repeat("0", len(text)), map[rune]string{char: "0"}
 	}
 
 	// Paso 2: construir árbol de Huffman
