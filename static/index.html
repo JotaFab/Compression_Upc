@@ -1,49 +1,144 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <title>Compresor de Archivos</title>
-    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
-    <style>
-        body { max-width: 800px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif; }
-        .container { background: #f5f5f5; padding: 20px; border-radius: 8px; }
-        .form-group { margin-bottom: 20px; }
-        .results { 
-            background: #fff; 
-            padding: 15px; 
-            border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .download-info { 
-            color: #2196F3;
-            font-weight: bold;
-            margin-top: 15px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h2>Compresor de Archivos</h2>
-        
-        <div class="form-group">
-            <form action="/upload" method="post" enctype="multipart/form-data">
-                <h3>Selecciona un archivo:</h3>
-                <input type="file" name="file" required>
-                <div style="margin-top: 10px;">
-                    <button type="submit" name="action" value="compress">Comprimir</button>
-                    <button type="submit" name="action" value="decompress">Descomprimir</button>
-                </div>
-            </form>
-        </div>
+<html lang="es">
 
-        {{if .}}
-        <div class="results" hx-get="/download/{{.Filename}}" hx-trigger="load delay:3s">
-            <h3>Resultados del proceso:</h3>
-            <p>Tamaño original: {{.OriginalSize}} bytes</p>
-            <p>Tamaño final: {{.CompressedSize}} bytes</p>
-            <p>Ratio: {{.Ratio}}%</p>
-            <p class="download-info">⬇️ La descarga comenzará automáticamente en 3 segundos...</p>
-        </div>
-        {{end}}
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HUFMM-AI-ZADOR</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: #000;
+      font-family: Arial, sans-serif;
+      color: white;
+      text-align: center;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    img.logo {
+      width: 300px;
+      height: auto;
+      border-radius: 20px;
+      margin-bottom: 30px;
+    }
+
+    .buttons {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .custom-file-upload {
+      background-color: #1da1f2;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 9999px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s ease;
+    }
+
+    .custom-file-upload:hover {
+      background-color: #0d8ddb;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    button {
+      background-color: #1da1f2;
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 9999px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #0d8ddb;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .results {
+      text-align: center;
+    }
+
+    .results h2 {
+      margin-bottom: 20px;
+    }
+
+    .results p {
+      margin: 10px 0;
+    }
+
+    .download-btn {
+      margin-top: 30px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container" id="interface1">
+    <img src="logo.png" alt="Logo" class="logo" />
+    <div class="buttons">
+      <label class="custom-file-upload">
+        Subir Archivo
+        <input type="file" id="fileInput" />
+      </label>
+      <div id="fileName" style="margin-top: 10px; color: white;"></div>
+      <button onclick="comprimir()">Comprimir</button>
     </div>
+  </div>
+
+  <div class="container hidden" id="interface2">
+    <div class="results">
+      <h2>Resultados de Compresión</h2>
+      <p><strong>Tamaño Original:</strong> 150 KB</p>
+      <p><strong>Tamaño Comprimido:</strong> 50 KB</p>
+      <p><strong>Ratio de Compresión:</strong> 3:1</p>
+      <button class="download-btn" onclick="descargar()">Descargar Archivo Comprimido</button>
+    </div>
+  </div>
+
+  <script>
+    function comprimir() {
+      // Aquí se podría agregar lógica real con fetch() si conectas backend
+
+      document.getElementById('interface1').classList.add('hidden');
+      document.getElementById('interface2').classList.remove('hidden');
+    }
+
+    function descargar() {
+      // Crea un archivo de prueba para descargar
+      const contenido = "Archivo comprimido de ejemplo";
+      const blob = new Blob([contenido], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'archivo_comprimido.txt';
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+    document.getElementById('fileInput').addEventListener('change', function () {
+      const fileName = this.files.length > 0 ? this.files[0].name : "Ningún archivo seleccionado";
+      document.getElementById('fileName').innerText = "Archivo seleccionado: " + fileName;
+    });
+
+  </script>
 </body>
+
 </html>

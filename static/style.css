@@ -1,0 +1,79 @@
+/* 1. Asegura el fondo negro en todo el viewport */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  color: #fff;
+  font-family: Arial, sans-serif;
+}
+
+/* 2. Contenedor centrado */
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 3. Wrapper sin fondo propio */
+.wrapper {
+  text-align: center;
+  width: 90%;
+  max-width: 400px;
+}
+
+/* 4. Logo circular */
+.logo {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #fff;
+  margin-bottom: 2rem;
+}
+
+/* 5. Ocultar por defecto */
+.hidden {
+  display: none;
+}
+
+/* 6. Botonera estilo “Twitter” */
+.button-group {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+/* 7. Botones base */
+.btn {
+  background: #1da1f2;
+  color: #fff;
+  border: none;
+  border-radius: 9999px;
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btn:hover {
+  background: #1398db;
+}
+
+/* 8. Label + input file estilizado */
+.file-btn {
+  background: transparent;
+  border: 2px solid #1da1f2;
+  color: #1da1f2;
+}
+
+.file-btn:hover {
+  background: rgba(29, 161, 242, 0.1);
+}
+
+.file-btn input {
+  display: none;
+  /* oculta el input nativo */
+}

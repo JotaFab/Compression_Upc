@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"io"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"strconv"
@@ -12,7 +14,7 @@ func MuxRoutes() *http.ServeMux {
 
 	// Define your routes here
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "index.html")
+		http.ServeFile(w, r, "static/index.html")
 	})
 	mux.HandleFunc("/compress", compressHandler)
 	mux.HandleFunc("/decompress", decompressHandler)
@@ -52,6 +54,7 @@ func downloadHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func compressHandler(w http.ResponseWriter, r *http.Request) {
+	var fileName string
 	if r.Method == http.MethodPost {
 		// Handle file upload
 		file, _, err := r.FormFile("file")
@@ -61,19 +64,41 @@ func compressHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		defer file.Close()
 
-		// Process the uploaded file (e.g., save it to disk)
+		// Save the uploaded file to the process directory
+		fileName = r.FormValue("fileName")
+		if fileName == "" {
+			http.Error(w, "File name is required", http.StatusBadRequest)
+			return
+		}
+		err = saveFile(file, fileName)
+		if err != nil {
+			http.Error(w, "Error saving file", http.StatusInternalServerError)
+			return
+		}
 
 		// redirect to /
-		http.Redirect(w, r, "/", http.StatusSeeOther)
 	} else {
 
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+
 	}
-	// Handle compression logic here
-	w.Write([]byte("Compression logic goes here"))
-	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func decompressHandler(w http.ResponseWriter, r *http.Request) {
 	// Handle decompression logic here
 	w.Write([]byte("Decompression logic goes here"))
+}
+
+func saveFile(file multipart.File, fileName string) error {
+	outFile, err := os.Create("process/" + fileName)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+
+	// Copy the uploaded file to the new file
+	if _, err := io.Copy(outFile, file); err != nil {
+		return err
+	}
+	return nil
 }
