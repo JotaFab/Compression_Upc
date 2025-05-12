@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    networks:
+      - app_network
+
+  cloudflared:
+    image: docker.io/cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run --token eyJhIjoiN2Y2YzhhMzQwZTAxNWU0NzQ5ODYxNDYzNDYxMThhZmUiLCJ0IjoiMjZlNWYzZjUtODUwNy00MGVmLTgyNmMtNDhlMTNkNjQwNmE1IiwicyI6IllXRmpPREJtTWpZdFltVmhZeTAwWVRVeUxXSXpZVEF0WW1NMU5qQTVNMkUyWmprMCJ9
+    depends_on:
+      - app
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge

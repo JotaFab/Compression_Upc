@@ -1,20 +1,60 @@
-document.getElementById("comprimirBtn").onclick = () => {
-    const file = document.getElementById("archivo").files[0];
-    if (!file) return alert("Selecciona un archivo.");
+let processedFileName = '';
 
-    // Simula compresión
-    const orig = file.size;
-    const comp = Math.floor(orig * 0.5);
-    const ratio = (comp / orig).toFixed(2);
+async function handleCompression(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    const fileInput = event.target.querySelector('input[type="file"]');
+    if (!fileInput.files[0]) {
+        alert('Por favor seleccione un archivo');
+        return;
+    }
+    formData.append('fileName', fileInput.files[0].name);
+    
+    try {
+        const response = await fetch('/compress', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) throw new Error('Compression failed');
+        processedFileName = await response.text();
+        document.getElementById('downloadBtn').style.display = 'block';
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+}
 
-    document.getElementById("interfaz1").classList.add("hidden");
-    document.getElementById("interfaz2").classList.remove("hidden");
+async function handleDecompression(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    const fileInput = event.target.querySelector('input[type="file"]');
+    if (!fileInput.files[0]) {
+        alert('Por favor seleccione un archivo');
+        return;
+    }
+    formData.append('fileName', fileInput.files[0].name);
+    
+    try {
+        const response = await fetch('/decompress', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) throw new Error('Decompression failed');
+        processedFileName = await response.text();
+        document.getElementById('downloadBtn').style.display = 'block';
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+}
 
-    document.getElementById("original").innerText = orig;
-    document.getElementById("comprimido").innerText = comp;
-    document.getElementById("ratio").innerText = ratio;
-};
+function downloadFile() {
+    if (processedFileName) {
+        window.location.href = `/download?file=${encodeURIComponent(processedFileName)}`;
+    }
+}
 
-document.getElementById("descargarBtn").onclick = () => {
-    alert("Aquí descarga real o redirección a /descargar");
-};
+// Asignar los event listeners
+document.getElementById('compressForm')?.addEventListener('submit', handleCompression);
+document.getElementById('decompressForm')?.addEventListener('submit', handleDecompression);
+document.getElementById('downloadBtn')?.addEventListener('click', downloadFile);
