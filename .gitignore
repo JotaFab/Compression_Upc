@@ -1,5 +1,5 @@
 uploads
 go.sum
-huffman/test.txt
-huffman/test_decompressed.txt
-huffman/test.huff
+huffman/test*
+
+process

@@ -3,9 +3,11 @@ package routes
 import (
 	"Compression_Upc/huffman"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -33,22 +35,36 @@ func MuxRoutes() *http.ServeMux {
 }
 
 func downloadHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	fileName := r.URL.Query().Get("file")
 	if fileName == "" {
 		http.Error(w, "File name is required", http.StatusBadRequest)
 		return
 	}
 
-	filePath := "process/" + fileName
+	// Sanitize filename to prevent path traversal
+	fileName = filepath.Base(fileName)
+
+	// Ensure the file is in the process directory
+	filePath := filepath.Join("process", fileName)
+	if !strings.HasPrefix(filePath, filepath.Join("process")) {
+		http.Error(w, "Invalid file path", http.StatusBadRequest)
+		return
+	}
+
 	file, err := os.Open(filePath)
 	if err != nil {
-		http.Error(w, "Error opening file", http.StatusInternalServerError)
+		http.Error(w, "File not found", http.StatusNotFound)
 		return
 	}
 	defer file.Close()
 
-	// Set headers
-	w.Header().Set("Content-Disposition", "attachment; filename="+fileName)
+	// Set headers with sanitized filename
+	w.Header().Set("Content-Disposition", "attachment; filename="+sanitizeFilename(fileName))
 	w.Header().Set("Content-Type", "application/octet-stream")
 
 	// Copy file to response
@@ -58,47 +74,70 @@ func downloadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Eliminar el archivo después de enviarlo
-	defer os.Remove(filePath)
+	// Delete file after sending
+	if err := os.Remove(filePath); err != nil {
+		// Log the error but don't return it to the client
+		log.Printf("Error removing file %s: %v", filePath, err)
+	}
+}
+
+// Add this helper function
+func sanitizeFilename(filename string) string {
+	// Remove any non-alphanumeric characters except for common file extensions
+	return strings.Map(func(r rune) rune {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '-' || r == '_' || r == '.' {
+			return r
+		}
+		return -1
+	}, filename)
 }
 
 func compressHandler(w http.ResponseWriter, r *http.Request) {
-	var fileName string
-	if r.Method == http.MethodPost {
-		// Handle file upload
-		file, _, err := r.FormFile("file")
-		if err != nil {
-			http.Error(w, "Error reading file", http.StatusBadRequest)
-			return
-		}
-		defer file.Close()
-
-		// Save the uploaded file to the process directory
-		fileName = r.FormValue("fileName")
-		if fileName == "" {
-			http.Error(w, "File name is required", http.StatusBadRequest)
-			return
-		}
-
-		// quitar espacios en blanco
-		fileName = strings.TrimSpace(fileName)
-
-		err = saveFile(file, fileName)
-		if err != nil {
-			http.Error(w, "Error saving file", http.StatusInternalServerError)
-			return
-		}
-		huffman.Compress("process/"+fileName, "process/"+fileName+".huff")
-
-		// responde con el nombre del archivo comprimido
-		w.Write([]byte(fileName + ".huff"))
-		return
-
-	} else {
-
+	if r.Method != http.MethodPost {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
+
+	// Handle file upload
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "Error reading file", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	// Get and validate filename
+	fileName := strings.TrimSpace(r.FormValue("fileName"))
+	if fileName == "" {
+		http.Error(w, "File name is required", http.StatusBadRequest)
+		return
+	}
+
+	// Sanitize filename to prevent path traversal
+	fileName = filepath.Base(fileName)
+
+	// Create process directory if it doesn't exist
+	if err := os.MkdirAll("process", 0755); err != nil {
+		http.Error(w, "Error creating process directory", http.StatusInternalServerError)
+		return
+	}
+
+	// Save file
+	inputPath := filepath.Join("process", fileName)
+	if err := saveFile(file, fileName); err != nil {
+		http.Error(w, "Error saving file", http.StatusInternalServerError)
+		return
+	}
+	defer os.Remove(inputPath)
+
+	// Compress file
+	outputPath := inputPath + ".huff"
+	if err := huffman.Compress(inputPath, outputPath); err != nil {
+		http.Error(w, "Error compressing file", http.StatusInternalServerError)
+		return
+	}
+
+	w.Write([]byte(fileName + ".huff"))
 }
 
 func decompressHandler(w http.ResponseWriter, r *http.Request) {

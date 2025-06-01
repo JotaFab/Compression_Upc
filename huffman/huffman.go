@@ -4,16 +4,18 @@ import (
 	"bytes"
 	"container/heap"
 	"encoding/binary"
+	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 )
 
 // Estructura para el nodo del árbol de Huffman
 type huffmanNode struct {
-	frequency int
-	char      byte
-	left      *huffmanNode
-	right     *huffmanNode
+	Frequency int          `json:"frequency"`
+	Char      byte         `json:"char"`
+	Left      *huffmanNode `json:"left,omitempty"`
+	Right     *huffmanNode `json:"right,omitempty"`
 }
 
 // Definición del min-heap para los nodos de Huffman
@@ -22,7 +24,7 @@ type priorityQueue []*huffmanNode
 func (pq priorityQueue) Len() int { return len(pq) }
 
 func (pq priorityQueue) Less(i, j int) bool {
-	return pq[i].frequency < pq[j].frequency
+	return pq[i].Frequency < pq[j].Frequency
 }
 
 func (pq priorityQueue) Swap(i, j int) {
@@ -38,7 +40,7 @@ func (pq *priorityQueue) Pop() any {
 	old := *pq
 	n := len(old)
 	item := old[n-1]
-	old[n-1] = nil // Evitar fugas de memoria
+	old[n-1] = nil
 	*pq = old[0 : n-1]
 	return item
 }
@@ -46,7 +48,7 @@ func (pq *priorityQueue) Pop() any {
 func buildHuffmanTree(frequencies map[byte]int) *huffmanNode {
 	pq := make(priorityQueue, 0, len(frequencies))
 	for char, freq := range frequencies {
-		pq = append(pq, &huffmanNode{frequency: freq, char: char})
+		pq = append(pq, &huffmanNode{Frequency: freq, Char: char})
 	}
 	heap.Init(&pq)
 
@@ -57,9 +59,9 @@ func buildHuffmanTree(frequencies map[byte]int) *huffmanNode {
 
 		// Crear un nuevo nodo interno con la suma de las frecuencias
 		mergedNode := &huffmanNode{
-			frequency: node1.frequency + node2.frequency,
-			left:      node1,
-			right:     node2,
+			Frequency: node1.Frequency + node2.Frequency,
+			Left:      node1,
+			Right:     node2,
 		}
 
 		// Insertar el nuevo nodo en la cola de prioridad
@@ -80,25 +82,25 @@ func Compress(inputFile string, outputFile string) error {
 	if err != nil {
 		return err
 	}
-
-	// 2. Contar la frecuencia de cada byte.
+	// 2. Contar la frecuencia de cada byte en un mapa o diccionario.
 	frequencies := countFrequencies(content)
-
 	// 3. Crear el árbol de Huffman.
 	root := buildHuffmanTree(frequencies)
-
+	// PrintTreeAsJSON(root)
+	// PrintLeafs(root)
 	// 4. Crear la tabla de códigos Huffman.
 	codes := generateCodes(root)
-
+	fmt.Println("Códigos Huffman generados:")
+	for char, code := range codes {
+		fmt.Printf("Carácter: '%c', Código: %s\n", char, code)
+	}
 	// 5. Codificar el contenido del archivo usando la tabla de códigos.
 	encodedData := encode(content, codes)
-
 	// 6. Guardar los datos comprimidos y la tabla de códigos en el archivo de salida.
 	err = saveCompressedFile(outputFile, encodedData, codes)
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -143,16 +145,16 @@ func generateCodesRecursive(node *huffmanNode, currentCode string, codes map[byt
 	}
 
 	// Si es un nodo hoja, hemos llegado a un carácter
-	if node.left == nil && node.right == nil {
-		codes[node.char] = currentCode
+	if node.Left == nil && node.Right == nil {
+		codes[node.Char] = currentCode
 		return
 	}
 
 	// Recorrer el subárbol izquierdo añadiendo '0' al código
-	generateCodesRecursive(node.left, currentCode+"0", codes)
+	generateCodesRecursive(node.Left, currentCode+"0", codes)
 
 	// Recorrer el subárbol derecho añadiendo '1' al código
-	generateCodesRecursive(node.right, currentCode+"1", codes)
+	generateCodesRecursive(node.Right, currentCode+"1", codes)
 }
 func encode(data []byte, codes map[byte]string) []byte {
 	var encodedData bytes.Buffer
@@ -323,4 +325,27 @@ func bytesToBits(data []byte) string {
 		}
 	}
 	return bitsBuffer.String()
+}
+
+// Add this new function to print the tree as JSON
+func PrintTreeAsJSON(node *huffmanNode) error {
+	jsonData, err := json.MarshalIndent(node, "", "    ")
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(jsonData))
+	return nil
+}
+
+// PrintLeafs prints the leaf nodes of the Huffman tree
+func PrintLeafs(node *huffmanNode) {
+	if node == nil {
+		return
+	}
+	if node.Left == nil && node.Right == nil {
+		fmt.Printf("Character: '%c', Frequency: %d\n", node.Char, node.Frequency)
+		return
+	}
+	PrintLeafs(node.Left)
+	PrintLeafs(node.Right)
 }
