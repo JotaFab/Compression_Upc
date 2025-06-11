@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 func MuxRoutes() *http.ServeMux {
@@ -130,14 +131,27 @@ func compressHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer os.Remove(inputPath)
 
-	// Compress file
+	// Compress file with timing
 	outputPath := inputPath + ".huff"
-	if err := huffman.Compress(inputPath, outputPath); err != nil {
-		http.Error(w, "Error compressing file", http.StatusInternalServerError)
+	start := time.Now()
+	resultCh := make(chan error)
+	go func(inputPath, outputPath string, result chan<- error) {
+		result <- huffman.Compress(inputPath, outputPath)
+	}(inputPath, outputPath, resultCh)
+
+	select {
+	case err := <-resultCh:
+		if err != nil {
+			http.Error(w, "Error compressing file", http.StatusInternalServerError)
+			return
+		}
+		duration := time.Since(start)
+		log.Printf("Compression of %s took %v", fileName, duration)
+		w.Write([]byte(fileName + ".huff"))
+	case <-time.After(60 * time.Second):
+		http.Error(w, "Compression timed out", http.StatusGatewayTimeout)
 		return
 	}
-
-	w.Write([]byte(fileName + ".huff"))
 }
 
 func decompressHandler(w http.ResponseWriter, r *http.Request) {
@@ -174,15 +188,26 @@ func decompressHandler(w http.ResponseWriter, r *http.Request) {
 		// Remove .huff extension for output file
 		outputName := strings.TrimSuffix(fileName, ".huff")
 
-		// Decompress file
-		err = huffman.Decompress("process/"+fileName, "process/"+outputName)
-		if err != nil {
-			http.Error(w, "Error decompressing file", http.StatusInternalServerError)
+		// Decompress file with timing using goroutine and channel
+		start := time.Now()
+		resultCh := make(chan error)
+		go func(inputPath, outputPath string, result chan<- error) {
+			result <- huffman.Decompress("process/"+fileName, "process/"+outputName)
+		}("process/"+fileName, "process/"+outputName, resultCh)
+
+		select {
+		case err := <-resultCh:
+			if err != nil {
+				http.Error(w, "Error decompressing file", http.StatusInternalServerError)
+				return
+			}
+			duration := time.Since(start)
+			log.Printf("Decompression of %s took %v", fileName, duration)
+			w.Write([]byte(outputName))
+		case <-time.After(60 * time.Second):
+			http.Error(w, "Decompression timed out", http.StatusGatewayTimeout)
 			return
 		}
-
-		// Return the output filename
-		w.Write([]byte(outputName))
 		return
 	}
 

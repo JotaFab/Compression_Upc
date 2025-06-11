@@ -10,6 +10,13 @@ import (
 	"os"
 )
 
+// Huffman es un paquete que implementa la compresión y descompresión de archivos usando el algoritmo de Huffman.
+// El algoritmo de Huffman es un método de compresión sin pérdida que utiliza un árbol binario para codificar los datos.
+// El paquete proporciona dos funciones principales: Compress y Decompress.
+// Compress comprime un archivo de entrada y guarda el resultado en un archivo de salida con extensión .huff.
+// Decompress descomprime un archivo de entrada .huff y guarda el resultado en un archivo de salida.
+
+
 // Estructura para el nodo del árbol de Huffman
 type huffmanNode struct {
 	Frequency int          `json:"frequency"`
