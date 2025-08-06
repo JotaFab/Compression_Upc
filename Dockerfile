@@ -1,16 +1,45 @@
-FROM golang:1.24-alpine
+# Build stage
+FROM golang:1.24-alpine AS builder
 
-WORKDIR /app
+# Install required build tools
+RUN apk add --no-cache git
+
+# Set working directory
+WORKDIR /build
+
+# Copy go mod files first for better caching
+COPY go.mod ./
+RUN go mod download
+
+# Copy source code
 COPY . .
 
-# Crear directorio process si no existe y establecer permisos
-RUN mkdir -p process && chmod 777 process
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -o main -ldflags="-w -s" .
 
-RUN go mod tidy
-RUN go build -o /app/main .
-RUN chmod +x /app/main
+# Final stage
+FROM alpine:3.19
 
-# Exponer el puerto 8080
+# Add non root user
+RUN adduser -D -g '' appuser
 
+# Create process directory with correct permissions
+RUN mkdir -p /app/process && chown -R appuser:appuser /app
+
+WORKDIR /app
+
+# Copy binary from builder
+COPY --from=builder /build/main .
+
+# Set ownership
+RUN chown -R appuser:appuser /app
+
+# Use non root user
+USER appuser
+
+# Expose port
 EXPOSE 8080
+
+
+# Run the application
 CMD ["./main"]
